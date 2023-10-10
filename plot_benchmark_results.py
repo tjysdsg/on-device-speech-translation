@@ -9,9 +9,7 @@ def main():
     out_dir = args.out_dir
     os.makedirs(out_dir, exist_ok=True)
 
-    flop = {}
-    latency = {}
-    bleu = {}
+    results = {}
     for path in os.listdir(args.result_dir):
         if not path.endswith('.json'):
             continue
@@ -19,19 +17,9 @@ def main():
         tag = path.split('.')[0]
         with open(os.path.join(args.result_dir, path), 'r', encoding='utf-8') as f:
             r = json.load(f)
-            result = BenchmarkResult(**r)
+            results[tag] = BenchmarkResult(**r)
 
-            flop[tag] = result.flop
-            latency[tag] = result.latency
-            bleu[tag] = result.bleu
-
-    # print(flop, latency, bleu)
-    plot_benchmark_result(
-        list(bleu.values()),
-        list(latency.values()),
-        list(flop.values()),
-        out_dir,
-    )
+    plot_benchmark_result(results, out_dir)
 
 
 def get_args():
