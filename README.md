@@ -3,18 +3,8 @@
 - Pretrained model that's
   used: https://huggingface.co/espnet/brianyan918_mustc-v2_en-de_st_conformer_asrinit_v2_raw_en_de_bpe_tc4000_sp
 
-1. Prepare data
-
 ```bash
-cd data/
-python prepare_data.py --out_dir ../data
-```
-
-2. Run benchmarks
-
-```bash
-cd pretrained/
-python lab2.py --data_dir ../data --out_dir ../output --num_test_utts 20
+./run.sh
 ```
 
 ## Notes
