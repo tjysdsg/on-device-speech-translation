@@ -1,17 +1,7 @@
-from kaldiio import ReadHelper
 import time
-import torch
-import string
 from espnet2.bin.st_inference import Speech2Text
-import os
-import json
-from typing import List
-import pandas as pd
-import soundfile as sf
-import matplotlib.pyplot as plt
 from sacrebleu.metrics import BLEU
-import yaml
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 
 
 def init_inference_pipeline(
@@ -87,30 +77,21 @@ def test_st_model(
     return BenchmarkResult(latency=avg_latency, bleu=res.score)
 
 
-def plot(path):
-    assert (os.path.exists(path))
-    fig_path_root = path[:-5]
-    with open(path, 'r') as f:
-        stat = json.load(f)
-        assert (len(stat['score']) == len(stat['latency']))
-        assert (len(stat['score']) == len(stat['flop']))
-    plt.plot(stat['flop'], stat['score'])
-    plt.xlabel('FLOPs')
-    plt.ylabel('BLEU score')
-    plt.title('BLEU score vs FLOPs')
-    plt.savefig(fig_path_root + '_BLUE_vs_FLOP.png')
-    plt.show()
+def calc_flops(
+        st_pipeline: Speech2Text,
+        utt2wav,
+        num_utts=-1,  # number of utterances used for testing if positive
+):
+    from deepspeed.profiling.flops_profiler import FlopsProfiler
 
-    plt.plot(stat['latency'], stat['score'])
-    plt.xlabel('latency (s)')
-    plt.ylabel('BLEU score')
-    plt.title('BLEU score vs latency')
-    plt.savefig(fig_path_root + '_BLUE_vs_latency.png')
-    plt.show()
+    test_data = list(utt2wav.items())
+    if num_utts > 0:
+        test_data = test_data[:num_utts]
 
-    plt.plot(stat['flop'], stat['latency'])
-    plt.xlabel('FLOPs')
-    plt.ylabel('latency (s)')
-    plt.title('latency (s) vs FLOPs')
-    plt.savefig(fig_path_root + '_latency_vs_FLOP.png')
-    plt.show()
+    prof = FlopsProfiler(st_pipeline.st_model)
+    prof.start_profile()
+    for i, (utt, speech) in enumerate(test_data):
+        st_pipeline(speech)
+    prof.stop_profile()
+
+    return int(prof.get_total_flops() / len(test_data))

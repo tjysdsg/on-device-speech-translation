@@ -1,14 +1,17 @@
 import yaml
+import json
+import os
+import matplotlib.pyplot as plt
 
 
 def modify_model_config(config_path: str, new_config_path: str, modifier):
-    with open(config_path, "r") as f:
+    with open(config_path, "r", encoding='utf-8') as f:
         config = yaml.safe_load(f)
 
     config = modifier(config)
 
-    with open(new_config_path, "w") as f:
-        yaml.dump(config, f)
+    with open(new_config_path, "w", encoding='utf-8') as f:
+        yaml.dump(config, f, allow_unicode=True)
 
 
 def copy_state_dict(dst_state, src_state):
@@ -30,9 +33,32 @@ def copy_state_dict(dst_state, src_state):
 
             idx = []
             for ss, ds in zip(src_size, dst_size):
-                assert ss >= ds
+                assert ss >= ds, f'{src_size} => {dst_size} for layer {key}'
                 idx.append(slice(ds))
 
             print(f"Changing layer size of `{key}` from {src_size} to {dst_size}")
             ret[key] = src_state[key][idx]
     return ret
+
+
+def plot_benchmark_result(bleu: list, latency: list, flop: list, out_dir: str):
+    plt.plot(flop, bleu)
+    plt.xlabel('FLOPs')
+    plt.ylabel('BLEU score')
+    plt.title('BLEU score vs FLOPs')
+    plt.savefig(os.path.join(out_dir, 'BLEU_vs_FLOP.png'))
+    plt.close('all')
+
+    plt.plot(latency, bleu)
+    plt.xlabel('latency (s)')
+    plt.ylabel('BLEU score')
+    plt.title('BLEU score vs latency')
+    plt.savefig(os.path.join(out_dir, 'BLEU_vs_latency.png'))
+    plt.close('all')
+
+    plt.plot(flop, latency)
+    plt.xlabel('FLOPs')
+    plt.ylabel('latency (s)')
+    plt.title('latency (s) vs FLOPs')
+    plt.savefig(os.path.join(out_dir, 'latency_vs_FLOP.png'))
+    plt.close('all')

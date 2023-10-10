@@ -1,10 +1,11 @@
-from benchmarking import plot, init_inference_pipeline, test_st_model, BenchmarkResult
+from benchmarking import init_inference_pipeline, test_st_model, BenchmarkResult
 import os
 import json
 import pickle
 import torch
-from dataclasses import dataclass, asdict
+from dataclasses import asdict
 from utils import modify_model_config, copy_state_dict
+from typing import Callable
 
 
 def save_exp_statistics(result: BenchmarkResult, path: str):
@@ -48,29 +49,51 @@ def main():
     result = test_st_model(pipeline, utt2wav, utt2text, num_utts=args.num_test_utts)
     save_exp_statistics(result, os.path.join(out_dir, 'original.json'))
 
+    # Change model size and run benchmarks
+    def decoder1(config: dict):
+        config['decoder_conf']['num_blocks'] = 4
+        return config
 
-def vary_model_size(
+    def decoder2(config: dict):
+        config['decoder_conf']['attention_heads'] = 2
+        config['decoder_conf']['linear_units'] = 1024
+        return config
+
+    def encoder1(config: dict):
+        config['encoder_conf']['num_blocks'] = 8
+        return config
+
+    def encoder2(config: dict):  # actually decreases decoder width as well
+        config['encoder_conf']['output_size'] = 128
+        config['encoder_conf']['attention_heads'] = 2
+        config['encoder_conf']['linear_units'] = 1024
+        return config
+
+    benchmark_modified_model(args, 'encoder1', pipeline.st_model, pretrained_config, utt2wav, utt2text, encoder1)
+    benchmark_modified_model(args, 'encoder2', pipeline.st_model, pretrained_config, utt2wav, utt2text, encoder2)
+    benchmark_modified_model(args, 'decoder1', pipeline.st_model, pretrained_config, utt2wav, utt2text, decoder1)
+    benchmark_modified_model(args, 'decoder2', pipeline.st_model, pretrained_config, utt2wav, utt2text, decoder2)
+
+
+def benchmark_modified_model(
         args,
         tag: str,
         orig_model: torch.nn.Module,
         pretrained_config: str,
         utt2wav: dict,
         utt2text: dict,
+        model_config_modifier: Callable[[dict], dict],
 ):
-    """Change the model size
+    """
+    Change the model size and run benchmarks
+
     1. Load config.yaml, change some settings, and save it to a new file
     3. Initialize an empty ST model using the new yaml file
     4. Copy (part of) original model weights to this new model and save it to a new checkpoint
     """
 
-    def decoder1(config: dict):
-        config['decoder_conf']['num_blocks'] = 4
-        config['decoder_conf']['attention_heads'] = 2
-        config['decoder_conf']['linear_units'] = 1024
-        return config
-
     new_config_file = "new_config.yaml"
-    modify_model_config(pretrained_config, new_config_file, modifier=decoder1)
+    modify_model_config(pretrained_config, new_config_file, modifier=model_config_modifier)
 
     # Build an empty ST model using the new config
     from espnet2.tasks.st import STTask

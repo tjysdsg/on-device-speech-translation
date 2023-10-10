@@ -17,6 +17,11 @@ cd pretrained/
 python lab2.py --data_dir ../data --out_dir ../output --num_test_utts 20
 ```
 
+## Notes
+
+- Decreasing model size without re-training causes auto-regressive decoder to output long and repeated garbage,
+  thus leading to higher average latency.
+
 # See also
 
 - ESPnet: https://github.com/espnet/espnet
