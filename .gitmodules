@@ -1,3 +1,6 @@
 [submodule "must_c_test_subset"]
 	path = must_c_test_subset
 	url = https://github.com/tjysdsg/must_c_test_subset
+[submodule "pretrained"]
+	path = pretrained
+	url = https://huggingface.co/espnet/brianyan918_mustc-v2_en-de_st_conformer_asrinit_v2_raw_en_de_bpe_tc4000_sp
