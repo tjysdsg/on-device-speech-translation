@@ -1,4 +1,4 @@
-from benchmarking import init_inference_pipeline, test_st_model, BenchmarkResult
+from benchmarking import init_inference_pipeline, test_st_model, BenchmarkResult, calc_flops
 import os
 import json
 import pickle
@@ -47,6 +47,7 @@ def main():
 
     # Results of the original pretrained model
     result = test_st_model(pipeline, utt2wav, utt2text, num_utts=args.num_test_utts)
+    result.flop = calc_flops(pipeline, utt2wav, num_utts=args.num_test_utts)
     save_exp_statistics(result, os.path.join(out_dir, 'original.json'))
 
     # Change model size and run benchmarks
@@ -113,6 +114,7 @@ def benchmark_modified_model(
 
     # Run the new model
     result = test_st_model(pipeline, utt2wav, utt2text, num_utts=args.num_test_utts)
+    result.flop = calc_flops(pipeline, utt2wav, num_utts=args.num_test_utts)
     save_exp_statistics(result, os.path.join(args.out_dir, f'{tag}.json'))
 
 
