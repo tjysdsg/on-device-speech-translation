@@ -70,10 +70,25 @@ def main():
         config['encoder_conf']['linear_units'] = 1024
         return config
 
+    def input_size1(config: dict):
+        config['frontend_conf']['hop_length'] = 200
+        return config
+
+    def input_size2(config: dict):
+        config['frontend_conf']['hop_length'] = 250
+        return config
+
+    def input_size3(config: dict):
+        config['frontend_conf']['hop_length'] = 300
+        return config
+
     benchmark_modified_model(args, 'encoder1', pipeline.st_model, pretrained_config, utt2wav, utt2text, encoder1)
     benchmark_modified_model(args, 'encoder2', pipeline.st_model, pretrained_config, utt2wav, utt2text, encoder2)
     benchmark_modified_model(args, 'decoder1', pipeline.st_model, pretrained_config, utt2wav, utt2text, decoder1)
     benchmark_modified_model(args, 'decoder2', pipeline.st_model, pretrained_config, utt2wav, utt2text, decoder2)
+    benchmark_modified_model(args, 'input_size1', pipeline.st_model, pretrained_config, utt2wav, utt2text, input_size1)
+    benchmark_modified_model(args, 'input_size2', pipeline.st_model, pretrained_config, utt2wav, utt2text, input_size2)
+    benchmark_modified_model(args, 'input_size3', pipeline.st_model, pretrained_config, utt2wav, utt2text, input_size3)
 
 
 def benchmark_modified_model(

@@ -11,3 +11,5 @@ popd
 pushd pretrained
 python ../lab2.py --data_dir ../data --out_dir ../output --num_test_utts 20
 popd
+
+python plot_benchmark_results.py --result_dir output --out_dir output/plot_all

@@ -19,3 +19,7 @@
 - https://github.com/mjpost/sacrebleu
 - Source code for speech translation inference: https://github.com/espnet/espnet/blob/master/espnet2/bin/st_inference.py
 - Source code for speech translation model: https://github.com/espnet/espnet/blob/master/espnet2/st/espnet_model.py
+
+# TODO
+
+- [ ] Some FLOPs are missing
