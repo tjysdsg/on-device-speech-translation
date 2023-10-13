@@ -5,7 +5,7 @@ set -u
 set -o pipefail
 
 pushd must_c_test_subset
-python ../prepare_data.py --out_dir ../data
+python ../prepare_data.py --out_dir ../data --sample_rate 16000
 popd
 
 pushd pretrained

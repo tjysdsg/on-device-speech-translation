@@ -2,13 +2,17 @@ from kaldiio import ReadHelper
 import os
 import pickle
 import json
+from typing import Optional
+from librosa import resample
 
 
-def read_data():
+def read_data(sample_rate: Optional[int] = None):
     utt2wav = {}
     with ReadHelper(f'scp:wav.scp') as reader:
         for utt, (rate, wav) in reader:
             # print(utt, rate, wav)
+            if sample_rate is not None and rate != sample_rate:
+                wav = resample(wav, orig_sr=rate, target_sr=sample_rate)
             utt2wav[utt] = wav
 
     utt2src_text = {}
@@ -34,7 +38,7 @@ def main():
     print("Due to limitation of Kaldi-style data dir, make sure you are running this script in the data dir")
 
     # Load test data (520 utterances out of MUST_C_v2 TST-COMMON subset)
-    utt2wav, utt2src_text, utt2tgt_text = read_data()
+    utt2wav, utt2src_text, utt2tgt_text = read_data(args.sample_rate)
 
     with open(os.path.join(out_dir, 'utt2wav.pkl'), 'wb') as f:
         pickle.dump(utt2wav, f)
@@ -53,6 +57,7 @@ def get_args():
     from argparse import ArgumentParser
     parser = ArgumentParser()
     parser.add_argument('--out_dir', type=str, required=True)
+    parser.add_argument('--sample_rate', type=int, default=16000)
     return parser.parse_args()
 
 
