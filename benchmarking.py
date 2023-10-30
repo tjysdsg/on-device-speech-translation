@@ -1,7 +1,8 @@
 import time
 from sacrebleu.metrics import BLEU
 from dataclasses import dataclass
-from espnet2.bin.st_inference import Speech2Text
+# from espnet2.bin.st_inference import Speech2Text
+from st_inference import Speech2Text
 
 
 @dataclass

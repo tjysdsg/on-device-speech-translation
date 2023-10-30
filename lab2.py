@@ -5,8 +5,9 @@ import pickle
 import torch
 from dataclasses import asdict
 from utils import modify_model_config, copy_state_dict
-from typing import Callable
-from espnet2.bin.st_inference import Speech2Text
+from typing import Callable, Literal, Optional, List
+# from espnet2.bin.st_inference import Speech2Text
+from st_inference import Speech2Text
 
 
 def save_exp_statistics(result: BenchmarkResult, path: str):
@@ -72,9 +73,7 @@ INPUT_SIZE_MODIFIERS = [input_size1, input_size2, input_size3]
 
 
 class LabExpRunner:
-    def __init__(self, quantized=False, device='cpu'):
-        # TODO:
-        self.quantized = quantized
+    def __init__(self, device='cpu'):
         self.device = device
 
     def create_inference_pipeline(
@@ -82,15 +81,25 @@ class LabExpRunner:
             model_file: str,
             config_file: str,
             beam_size: int = 10,
+            quantized: bool = False,
             **kwargs,
     ):
         # Check decode settings from:
         #    https://github.com/espnet/espnet/blob/master/egs2/must_c_v2/st1/conf/tuning/decode_st_conformer.yaml
+        quantize_modules = None
+        quantize_dtype = None
+        if quantized:
+            quantize_modules = ['Linear']
+            quantize_dtype = 'qint8'
+
         pipeline = Speech2Text(
             st_model_file=model_file,
             st_train_config=config_file,
             beam_size=beam_size,
             device=self.device,
+            quantized=quantized,
+            quantize_modules=quantize_modules,
+            quantize_dtype=quantize_dtype,
             **kwargs,
         )
         # print(pipeline.st_model)
@@ -123,6 +132,7 @@ class LabExpRunner:
         torch.save(new_state_dict, 'new_model.pth')
 
         # Construct a new inference pipeline using the new weights
+        # TODO
         pipeline = self.create_inference_pipeline(
             'new_model.pth', new_config_file,
         )
@@ -159,7 +169,7 @@ def main():
     # ==== Load Original Pre-trained Model ====
     pretrained_model = "exp/st_train_st_conformer_asrinit_v2_raw_en_de_bpe_tc4000_sp/valid.acc.ave_10best.pth"
     pretrained_config = "exp/st_train_st_conformer_asrinit_v2_raw_en_de_bpe_tc4000_sp/config.yaml"
-    pipeline = runner.create_inference_pipeline(pretrained_model, pretrained_config)
+    pipeline = runner.create_inference_pipeline(pretrained_model, pretrained_config, quantized=True)
 
     # Load test data (520 utterances out of MUST_C_v2 TST-COMMON subset)
     utt2wav, utt2text = read_data(args.data_dir)
