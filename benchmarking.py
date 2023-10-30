@@ -1,23 +1,7 @@
 import time
-from espnet2.bin.st_inference import Speech2Text
 from sacrebleu.metrics import BLEU
 from dataclasses import dataclass
-
-
-def init_inference_pipeline(
-        model_file: str,
-        config_file: str,
-        beam_size=10,
-        **kwargs,
-):
-    # a wrapper responsible for calling the actual pytorch model
-    return Speech2Text(
-        st_model_file=model_file,
-        st_train_config=config_file,
-        beam_size=beam_size,
-        device="cpu",
-        **kwargs,
-    )
+from espnet2.bin.st_inference import Speech2Text
 
 
 @dataclass
