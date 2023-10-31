@@ -21,7 +21,7 @@ def main():
     pipeline = runner.create_inference_pipeline(pretrained_model, pretrained_config, quantized=False)
 
     # Quantized
-    p = runner.create_inference_pipeline(pretrained_model, pretrained_config, quantized=False)
+    p = runner.create_inference_pipeline(pretrained_model, pretrained_config, quantized=True)
 
     # Load test data (520 utterances out of MUST_C_v2 TST-COMMON subset)
     utt2wav, utt2text = read_data(args.data_dir)
@@ -42,7 +42,7 @@ def main():
 def get_args():
     from argparse import ArgumentParser
     parser = ArgumentParser()
-    parser.add_argument('--num_test_utts', type=int, default=20)
+    parser.add_argument('--num_test_utts', type=int, default=100)
     parser.add_argument('--out_dir', type=str, required=True)
     parser.add_argument('--data_dir', type=str, required=True)
     return parser.parse_args()

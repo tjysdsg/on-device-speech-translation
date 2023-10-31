@@ -182,7 +182,7 @@ def main():
     )
 
     # Change model size and run benchmarks
-    for m in MODEL_CONFIG_MODIFIERS:
+    for m in INPUT_SIZE_MODIFIERS:  # MODEL_CONFIG_MODIFIERS:
         p = runner.resize_model(pipeline.st_model, pretrained_config, m)
         runner.run_benchmark(
             p, m.__name__, args.out_dir, utt2wav, utt2text, num_utts=args.num_test_utts, calculate_flops=False
@@ -192,7 +192,7 @@ def main():
 def get_args():
     from argparse import ArgumentParser
     parser = ArgumentParser()
-    parser.add_argument('--num_test_utts', type=int, default=20)
+    parser.add_argument('--num_test_utts', type=int, default=100)
     parser.add_argument('--out_dir', type=str, required=True)
     parser.add_argument('--data_dir', type=str, required=True)
     return parser.parse_args()
