@@ -112,6 +112,7 @@ class LabExpRunner:
             orig_model: torch.nn.Module,
             pretrained_config: str,
             model_config_modifier: Callable[[dict], dict],
+            quantized: bool = False,
     ) -> Speech2Text:
         """
         1. Load config.yaml, change some settings, and save it to a new file
@@ -132,9 +133,8 @@ class LabExpRunner:
         torch.save(new_state_dict, 'new_model.pth')
 
         # Construct a new inference pipeline using the new weights
-        # TODO
         pipeline = self.create_inference_pipeline(
-            'new_model.pth', new_config_file,
+            'new_model.pth', new_config_file, quantized=quantized
         )
         return pipeline
 
@@ -169,7 +169,7 @@ def main():
     # ==== Load Original Pre-trained Model ====
     pretrained_model = "exp/st_train_st_conformer_asrinit_v2_raw_en_de_bpe_tc4000_sp/valid.acc.ave_10best.pth"
     pretrained_config = "exp/st_train_st_conformer_asrinit_v2_raw_en_de_bpe_tc4000_sp/config.yaml"
-    pipeline = runner.create_inference_pipeline(pretrained_model, pretrained_config, quantized=True)
+    pipeline = runner.create_inference_pipeline(pretrained_model, pretrained_config)
 
     # Load test data (520 utterances out of MUST_C_v2 TST-COMMON subset)
     utt2wav, utt2text = read_data(args.data_dir)

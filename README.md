@@ -11,6 +11,8 @@
 
 - Decreasing model size without re-training causes auto-regressive decoder to output long and repeated garbage,
   thus leading to higher average latency.
+- There's an update to the python environment between Lab2 and Lab3, and I backed up results of lab2
+  in [output_lab2](output_lab2).
 
 # See also
 
@@ -19,7 +21,3 @@
 - https://github.com/mjpost/sacrebleu
 - Source code for speech translation inference: https://github.com/espnet/espnet/blob/master/espnet2/bin/st_inference.py
 - Source code for speech translation model: https://github.com/espnet/espnet/blob/master/espnet2/st/espnet_model.py
-
-# TODO
-
-- [ ] Some FLOPs are missing
