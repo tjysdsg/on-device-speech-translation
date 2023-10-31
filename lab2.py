@@ -82,6 +82,7 @@ class LabExpRunner:
             config_file: str,
             beam_size: int = 10,
             quantized: bool = False,
+            quantize_backend: str = 'x86',
             **kwargs,
     ):
         # Check decode settings from:
@@ -89,6 +90,7 @@ class LabExpRunner:
         quantize_modules = None
         quantize_dtype = None
         if quantized:
+            torch.backends.quantized.engine = quantize_backend
             quantize_modules = ['Linear']
             quantize_dtype = 'qint8'
 
