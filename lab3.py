@@ -1,4 +1,7 @@
 import os
+
+import torch
+
 from lab2 import LabExpRunner, read_data, MODEL_CONFIG_MODIFIERS, INPUT_SIZE_MODIFIERS
 
 
@@ -25,6 +28,8 @@ def main():
         pretrained_model, pretrained_config,
         quantized=True, quantize_dtype=args.quantize_dtype,
     )
+    # To view quantized model's size:
+    # torch.save(p.st_model.state_dict(), 'shit.pth')
 
     # Load test data (520 utterances out of MUST_C_v2 TST-COMMON subset)
     utt2wav, utt2text = read_data(args.data_dir)

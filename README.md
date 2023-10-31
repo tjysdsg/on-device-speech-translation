@@ -13,6 +13,7 @@
   thus leading to higher average latency.
 - There's an update to the python environment between Lab2 and Lab3, and I backed up results of lab2
   in [output_lab2](output_lab2).
+- `qint8` quantization: 200MB -> 70.5MB
 
 # See also
 
