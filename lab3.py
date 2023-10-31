@@ -21,7 +21,10 @@ def main():
     pipeline = runner.create_inference_pipeline(pretrained_model, pretrained_config, quantized=False)
 
     # Quantized
-    p = runner.create_inference_pipeline(pretrained_model, pretrained_config, quantized=True)
+    p = runner.create_inference_pipeline(
+        pretrained_model, pretrained_config,
+        quantized=True, quantize_dtype=args.quantize_dtype,
+    )
 
     # Load test data (520 utterances out of MUST_C_v2 TST-COMMON subset)
     utt2wav, utt2text = read_data(args.data_dir)
@@ -33,7 +36,10 @@ def main():
 
     # Change model size and run benchmarks
     for m in INPUT_SIZE_MODIFIERS:  # MODEL_CONFIG_MODIFIERS:
-        p = runner.resize_model(pipeline.st_model, pretrained_config, m, quantized=True)
+        p = runner.resize_model(
+            pipeline.st_model, pretrained_config, m,
+            quantized=True, quantize_dtype=args.quantize_dtype,
+        )
         runner.run_benchmark(
             p, m.__name__, args.out_dir, utt2wav, utt2text, num_utts=args.num_test_utts, calculate_flops=False
         )
@@ -43,6 +49,7 @@ def get_args():
     from argparse import ArgumentParser
     parser = ArgumentParser()
     parser.add_argument('--num_test_utts', type=int, default=100)
+    parser.add_argument('--quantize_dtype', type=str, choices=['qint8', 'float16'], default='qint8')
     parser.add_argument('--out_dir', type=str, required=True)
     parser.add_argument('--data_dir', type=str, required=True)
     return parser.parse_args()

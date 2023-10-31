@@ -82,17 +82,17 @@ class LabExpRunner:
             config_file: str,
             beam_size: int = 10,
             quantized: bool = False,
+            quantize_dtype: Literal['qint8', 'float16'] = 'qint8',
             quantize_backend: str = 'x86',
             **kwargs,
     ):
         # Check decode settings from:
         #    https://github.com/espnet/espnet/blob/master/egs2/must_c_v2/st1/conf/tuning/decode_st_conformer.yaml
         quantize_modules = None
-        quantize_dtype = None
         if quantized:
             torch.backends.quantized.engine = quantize_backend
             quantize_modules = ['Linear']
-            quantize_dtype = 'qint8'
+            quantize_dtype = quantize_dtype
 
         pipeline = Speech2Text(
             st_model_file=model_file,
@@ -114,7 +114,7 @@ class LabExpRunner:
             orig_model: torch.nn.Module,
             pretrained_config: str,
             model_config_modifier: Callable[[dict], dict],
-            quantized: bool = False,
+            **kwargs,
     ) -> Speech2Text:
         """
         1. Load config.yaml, change some settings, and save it to a new file
@@ -136,7 +136,7 @@ class LabExpRunner:
 
         # Construct a new inference pipeline using the new weights
         pipeline = self.create_inference_pipeline(
-            'new_model.pth', new_config_file, quantized=quantized
+            'new_model.pth', new_config_file, **kwargs,
         )
         return pipeline
 
