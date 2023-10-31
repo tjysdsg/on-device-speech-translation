@@ -16,19 +16,24 @@ def main():
     # ==== Load Original Pre-trained Model ====
     pretrained_model = "exp/st_train_st_conformer_asrinit_v2_raw_en_de_bpe_tc4000_sp/valid.acc.ave_10best.pth"
     pretrained_config = "exp/st_train_st_conformer_asrinit_v2_raw_en_de_bpe_tc4000_sp/config.yaml"
-    pipeline = runner.create_inference_pipeline(pretrained_model, pretrained_config, quantized=True)
+
+    # Original model without quantization
+    pipeline = runner.create_inference_pipeline(pretrained_model, pretrained_config, quantized=False)
+
+    # Quantized
+    p = runner.create_inference_pipeline(pretrained_model, pretrained_config, quantized=False)
 
     # Load test data (520 utterances out of MUST_C_v2 TST-COMMON subset)
     utt2wav, utt2text = read_data(args.data_dir)
 
     # Results of the original pretrained model
     runner.run_benchmark(
-        pipeline, 'original', args.out_dir, utt2wav, utt2text, num_utts=args.num_test_utts, calculate_flops=False
+        p, 'original', args.out_dir, utt2wav, utt2text, num_utts=args.num_test_utts, calculate_flops=False
     )
 
     # Change model size and run benchmarks
     for m in INPUT_SIZE_MODIFIERS:  # MODEL_CONFIG_MODIFIERS:
-        p = runner.resize_model(pipeline.st_model, pretrained_config, m)
+        p = runner.resize_model(pipeline.st_model, pretrained_config, m, quantized=True)
         runner.run_benchmark(
             p, m.__name__, args.out_dir, utt2wav, utt2text, num_utts=args.num_test_utts, calculate_flops=False
         )
