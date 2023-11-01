@@ -1,6 +1,5 @@
 # Copied from ESPnet (espnet2/bin/st_inference.py) to support quantization
 
-import argparse
 import logging
 import sys
 from pathlib import Path
@@ -8,11 +7,11 @@ from typing import Any, List, Optional, Sequence, Tuple, Union, Literal
 
 import numpy as np
 import torch
+from torch import nn
 from typeguard import check_argument_types, check_return_type
 
 from espnet2.asr.transducer.beam_search_transducer import BeamSearchTransducer
 from espnet2.asr.transducer.beam_search_transducer import Hypothesis as TransHypothesis
-from espnet2.fileio.datadir_writer import DatadirWriter
 from espnet2.tasks.enh_s2t import EnhS2TTask
 from espnet2.tasks.lm import LMTask
 from espnet2.tasks.st import STTask
@@ -21,15 +20,17 @@ from espnet2.text.token_id_converter import TokenIDConverter
 from espnet2.text.whisper_token_id_converter import OpenAIWhisperTokenIDConverter
 from espnet2.torch_utils.device_funcs import to_device
 from espnet2.torch_utils.set_all_random_seed import set_all_random_seed
-from espnet2.utils import config_argparse
-from espnet2.utils.types import str2bool, str2triple_str, str_or_none
 from espnet.nets.batch_beam_search import BatchBeamSearch
 from espnet.nets.beam_search import BeamSearch, Hypothesis
 from espnet.nets.pytorch_backend.transformer.subsampling import TooShortUttError
 from espnet.nets.scorer_interface import BatchScorerInterface
 from espnet.nets.scorers.ctc import CTCPrefixScorer
 from espnet.nets.scorers.length_bonus import LengthBonus
-from espnet.utils.cli_utils import get_commandline_args
+from torch.ao.quantization import (
+    get_default_qconfig_mapping,
+    QConfigMapping,
+)
+import torch.ao.quantization.quantize_fx as quantize_fx
 
 try:
     from transformers import AutoModelForSeq2SeqLM
@@ -39,7 +40,7 @@ except ImportError:
     is_transformers_available = False
 
 
-class Speech2Text:
+class Speech2Text(nn.Module):
     """Speech2Text class
 
     Examples:
@@ -98,11 +99,13 @@ class Speech2Text:
             quantize_dtype: str = None,
             # ================================
     ):
+        super().__init__()
         assert check_argument_types()
 
         task = STTask if not enh_s2t_task else EnhS2TTask
 
         # ================================
+        self.quantized = quantized
         if quantized:
             quantize_modules = set([getattr(torch.nn, q) for q in quantize_modules])
             quantize_dtype = getattr(torch, quantize_dtype)
@@ -480,7 +483,7 @@ class Speech2Text:
         self.ctc_greedy = ctc_greedy
 
     @torch.no_grad()
-    def __call__(
+    def forward(
             self, speech: Union[torch.Tensor, np.ndarray]
     ) -> List[
         Tuple[Optional[str], List[str], List[int], Union[Hypothesis, TransHypothesis]]
@@ -493,7 +496,7 @@ class Speech2Text:
             text, token, token_int, hyp
 
         """
-        assert check_argument_types()
+        # FIXME: doesn't work in FX Graph Mode: assert check_argument_types()
 
         # Input as audio signal
         if isinstance(speech, np.ndarray):
@@ -661,3 +664,48 @@ class Speech2Text:
             kwargs.update(**d.download_and_unpack(model_tag))
 
         return Speech2Text(**kwargs)
+
+
+class FxPTQFactory:
+    """
+    Factory utilities for post-training quantization using FX Graph Mode
+    """
+
+    def __init__(
+            self,
+            speech2text: Speech2Text,
+            quantization: Literal['static', 'dynamic'] = 'static',
+            # TODO:
+            quantize_modules: List[str] = None,
+            quantize_dtype: str = None,
+    ):
+        self.quantization = quantization
+        if self.quantization == 'static':
+            self.qconfig_mapping = get_default_qconfig_mapping('x86')
+        elif self.quantization == 'dynamic':
+            self.qconfig_mapping = QConfigMapping().set_global(torch.ao.quantization.default_dynamic_qconfig)
+        else:
+            assert False, f'Invalid value for {quantization}'
+
+        self.speech2text = speech2text
+        assert not self.speech2text.quantized, \
+            "Cannot use regular dynamic quantization implementation when using FX Graph Mode"
+
+    def create_static_ptq(
+            self,
+            example_inputs,
+    ) -> Speech2Text:
+        q = quantize_fx.prepare_fx(
+            self.speech2text,
+            self.qconfig_mapping,
+            example_inputs,
+        )
+
+        # Calibrate
+        print(f'Calibrating PTQ using {len(example_inputs)} examples')
+        with torch.no_grad():
+            for data in example_inputs:
+                q(data)
+
+        q = quantize_fx.convert_fx(q)
+        return q
