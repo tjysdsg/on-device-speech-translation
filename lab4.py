@@ -44,6 +44,32 @@ def encoder(model: ESPnetSTModel) -> PruneParamsType:
     return ret + subsampling(model)
 
 
+def decoder(model: ESPnetSTModel) -> PruneParamsType:
+    ret = [
+        (model.decoder.output_layer, 'weight'),
+    ]
+    for dec in model.decoder.decoders:
+        ret += [
+            # self attention
+            (dec.self_attn.linear_q, 'weight'),
+            (dec.self_attn.linear_k, 'weight'),
+            (dec.self_attn.linear_v, 'weight'),
+            (dec.self_attn.linear_out, 'weight'),
+
+            # cross attention
+            (dec.src_attn.linear_q, 'weight'),
+            (dec.src_attn.linear_k, 'weight'),
+            (dec.src_attn.linear_v, 'weight'),
+            (dec.src_attn.linear_out, 'weight'),
+
+            # feed forward
+            (dec.feed_forward.w_1, 'weight'),
+            (dec.feed_forward.w_2, 'weight'),
+        ]
+
+    return ret
+
+
 # =======================================================
 
 
@@ -71,7 +97,8 @@ def l1_unstructured(
 
 
 PRUNING_METHODS = [
-    l1_unstructured(encoder, amount=0.33),
+    # l1_unstructured(encoder, amount=0.33),
+    l1_unstructured(decoder, amount=0.33),
 ]
 
 
