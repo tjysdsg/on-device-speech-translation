@@ -4,7 +4,7 @@ from torch.nn.utils import prune, parameters_to_vector
 import torch.nn as nn
 from typing import List, Tuple, Callable
 from espnet2.st.espnet_model import ESPnetSTModel
-from utils import model_size_in_bytes
+from utils import model_size_in_bytes, sparse_model_size_in_bytes
 
 PruneParamsType = List[Tuple[nn.Module, str]]
 
@@ -105,14 +105,15 @@ def main():
         p = runner.create_inference_pipeline(pretrained_model, pretrained_config, quantized=False)
 
         print(f'\nBenchmarking {name}...')
-        func(p.st_model)
-
-        new_size = model_size_in_bytes(p.st_model)
-        print(f'Model size: {new_size / orig_size:.2f} ({new_size}/{orig_size})')
+        pruned_modules = func(p.st_model)
 
         runner.run_benchmark(
             p, name, args.out_dir, utt2wav, utt2text, num_utts=args.num_test_utts, calculate_flops=False
         )
+
+        # must be after benchmarking since we change some tensors to sparse
+        new_size = sparse_model_size_in_bytes(p.st_model, [p[0] for p in pruned_modules])
+        print(f'Model size: {new_size / orig_size:.2f} ({new_size}/{orig_size})')
 
 
 def get_args():

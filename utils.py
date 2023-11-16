@@ -1,9 +1,20 @@
 import yaml
 import os
 import torch
+from typing import List
 
 
 def model_size_in_bytes(model: torch.nn.Module):
+    torch.save(model.state_dict(), "temp.p")
+    size = os.path.getsize("temp.p")
+    os.remove('temp.p')
+    return size
+
+
+def sparse_model_size_in_bytes(model: torch.nn.Module, pruned_modules: List[torch.nn.Module]):
+    for p in pruned_modules:
+        p.weight = torch.nn.Parameter(p.weight.data.to_sparse())
+
     torch.save(model.state_dict(), "temp.p")
     size = os.path.getsize("temp.p")
     os.remove('temp.p')
