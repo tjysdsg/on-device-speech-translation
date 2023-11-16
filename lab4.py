@@ -70,6 +70,10 @@ def decoder(model: ESPnetSTModel) -> PruneParamsType:
     return ret
 
 
+def all_params(model: ESPnetSTModel) -> PruneParamsType:
+    return encoder(model) + decoder(model)
+
+
 # =======================================================
 
 
@@ -97,8 +101,9 @@ def l1_unstructured(
 
 
 PRUNING_METHODS = [
-    # l1_unstructured(encoder, amount=0.33),
+    l1_unstructured(encoder, amount=0.33),
     l1_unstructured(decoder, amount=0.33),
+    l1_unstructured(all_params, amount=0.33),
 ]
 
 
