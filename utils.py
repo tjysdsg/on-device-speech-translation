@@ -1,4 +1,13 @@
 import yaml
+import os
+import torch
+
+
+def model_size_in_bytes(model: torch.nn.Module):
+    torch.save(model.state_dict(), "temp.p")
+    size = os.path.getsize("temp.p")
+    os.remove('temp.p')
+    return size
 
 
 def modify_model_config(config_path: str, new_config_path: str, modifier):
