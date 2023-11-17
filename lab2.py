@@ -10,11 +10,6 @@ from typing import Callable, Literal, Optional, List
 from st_inference import Speech2Text
 
 
-def save_exp_statistics(result: BenchmarkResult, path: str):
-    with open(path, 'w', encoding='utf-8') as f:
-        json.dump(asdict(result), f, indent=2, ensure_ascii=False)
-
-
 def read_data(data_dir):
     with open(os.path.join(data_dir, 'utt2wav.pkl'), 'rb') as f:
         utt2wav = pickle.load(f)
@@ -154,7 +149,26 @@ class LabExpRunner:
         result = test_st_model(pipeline, utt2wav, utt2text, num_utts)
         if calculate_flops:
             result.flop = calc_flops(pipeline, utt2wav, num_utts)
-        save_exp_statistics(result, os.path.join(out_dir, f'{tag}.json'))
+        self.save_exp_statistics(result, os.path.join(out_dir, f'{tag}.json'))
+
+    def run_benchmark1(
+            self,
+            pipeline: Speech2Text,
+            utt2wav: dict,
+            utt2text: dict,
+            calculate_flops=True,
+            num_utts=20,
+    ) -> BenchmarkResult:
+        # Run the new model
+        result = test_st_model(pipeline, utt2wav, utt2text, num_utts)
+        if calculate_flops:
+            result.flop = calc_flops(pipeline, utt2wav, num_utts)
+        return result
+
+    @classmethod
+    def save_exp_statistics(cls, result: BenchmarkResult, path: str):
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(asdict(result), f, indent=2, ensure_ascii=False)
 
 
 def main():

@@ -1,5 +1,6 @@
 import os
 from lab2 import LabExpRunner, read_data
+from benchmarking import BenchmarkResult
 from torch.nn.utils import prune, parameters_to_vector
 import torch.nn as nn
 from typing import List, Tuple, Callable
@@ -102,8 +103,17 @@ def l1_unstructured(
 
 PRUNING_METHODS = [
     l1_unstructured(encoder, amount=0.33),
+    l1_unstructured(encoder, amount=0.5),
+    l1_unstructured(encoder, amount=0.7),
+    l1_unstructured(encoder, amount=0.9),
     l1_unstructured(decoder, amount=0.33),
+    l1_unstructured(decoder, amount=0.5),
+    l1_unstructured(decoder, amount=0.7),
+    l1_unstructured(decoder, amount=0.9),
     l1_unstructured(all_params, amount=0.33),
+    l1_unstructured(all_params, amount=0.5),
+    l1_unstructured(all_params, amount=0.7),
+    l1_unstructured(all_params, amount=0.9),
 ]
 
 
@@ -139,13 +149,17 @@ def main():
         print(f'\nBenchmarking {name}...')
         pruned_modules = func(p.st_model)
 
-        runner.run_benchmark(
-            p, name, args.out_dir, utt2wav, utt2text, num_utts=args.num_test_utts, calculate_flops=False
+        result = runner.run_benchmark1(
+            p, utt2wav, utt2text, num_utts=args.num_test_utts, calculate_flops=False
         )
 
         # must be after benchmarking since we change some tensors to sparse
         new_size = sparse_model_size_in_bytes(p.st_model, [p[0] for p in pruned_modules])
-        print(f'Model size: {new_size / orig_size:.2f} ({new_size}/{orig_size})')
+        size_ratio = new_size / orig_size
+        print(f'Model size: {size_ratio:.2f} ({new_size}/{orig_size})')
+
+        result.size_ratio = size_ratio
+        runner.save_exp_statistics(result, os.path.join(out_dir, f'{name}.json'))
 
 
 def get_args():

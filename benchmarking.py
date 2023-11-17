@@ -10,6 +10,7 @@ class BenchmarkResult:
     flop: float = 0
     latency: float = 0
     bleu: float = 0
+    size_ratio: float = 0
 
 
 def test_st_model(
