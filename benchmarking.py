@@ -51,7 +51,7 @@ def test_st_model(
         print(f"Translation results: {text}")
 
         print(f"Reference target text: {tgt_text}")
-        print(f"Sentence BLEU Score: {bleu.sentence_score(text, [tgt_text])}")
+        # print(f"Sentence BLEU Score: {bleu.sentence_score(text, [tgt_text])}")
         print("-" * 50)
 
     res = bleu.corpus_score(preds, refs)

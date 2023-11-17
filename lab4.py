@@ -1,6 +1,5 @@
 import os
 from lab2 import LabExpRunner, read_data
-from benchmarking import BenchmarkResult
 from torch.nn.utils import prune, parameters_to_vector
 import torch.nn as nn
 from typing import List, Tuple, Callable
@@ -70,9 +69,9 @@ def encoder_norm(model: ESPnetSTModel) -> PruneParamsType:
     return ret
 
 
-def encoder(model: ESPnetSTModel) -> PruneParamsType:
+def encoder_all(model: ESPnetSTModel) -> PruneParamsType:
     ret = [
-        # (model.encoder.after_norm, 'weight'),
+        (model.encoder.after_norm, 'weight'),
     ]
 
     return (
@@ -138,10 +137,10 @@ def decoder_norm(model: ESPnetSTModel) -> PruneParamsType:
     return ret
 
 
-def decoder(model: ESPnetSTModel) -> PruneParamsType:
+def decoder_all(model: ESPnetSTModel) -> PruneParamsType:
     ret = [
-        # (model.decoder.after_norm, 'weight'),
-        # (model.decoder.output_layer, 'weight'),
+        (model.decoder.after_norm, 'weight'),
+        (model.decoder.output_layer, 'weight'),
     ]
 
     return (
@@ -149,13 +148,9 @@ def decoder(model: ESPnetSTModel) -> PruneParamsType:
             + decoder_embed(model)
             + decoder_self_attn(model)
             + decoder_cross_attn(model)
-        # + decoder_ff(model)
-        # + decoder_norm(model)
+            + decoder_ff(model)
+            + decoder_norm(model)
     )
-
-
-def all_params(model: ESPnetSTModel) -> PruneParamsType:
-    return encoder(model) + decoder(model)
 
 
 # =======================================================
@@ -181,7 +176,39 @@ def l1_unstructured(
 
         return params
 
-    return f'l1_u_{param_filter.__name__}_{amount}', func
+    return f'{param_filter.__name__}_{amount}', func
+
+
+def optimal_config() -> Tuple[str, Callable[[ESPnetSTModel], PruneParamsType]]:
+    filter_amounts = [
+        [encoder_subsampling, 0.9],
+        [encoder_conv, 0.7],
+        [encoder_ff, 0.5],
+        [encoder_attn, 0.5],
+        [decoder_embed, 0.5],
+        [decoder_self_attn, 0.5],  # 0.7 made latency worse for some reason
+        [decoder_cross_attn, 0.33],
+    ]
+
+    def func(model: ESPnetSTModel):
+        pruned_params = []
+        for f, a in filter_amounts:
+            p = f(model)
+            pruned_params += p
+
+            prune.global_unstructured(
+                p,
+                pruning_method=prune.L1Unstructured,
+                amount=a,
+            )
+
+        # Make pruning permanent
+        for module, name in pruned_params:
+            prune.remove(module, name)
+
+        return pruned_params
+
+    return f'optimal', func
 
 
 PRUNING_AMOUNTS = [
@@ -197,7 +224,6 @@ PRUNING_FILTERS = [
     encoder_attn,
     encoder_ff,
     encoder_norm,
-    encoder,
 
     # Decoder
     decoder_embed,
@@ -205,15 +231,15 @@ PRUNING_FILTERS = [
     decoder_cross_attn,
     decoder_ff,
     decoder_norm,
-    decoder,
 ]
 
 PRUNING_CONFIGS = []
-for f in PRUNING_FILTERS:
-    for amount in PRUNING_AMOUNTS:
-        PRUNING_CONFIGS.append(
-            l1_unstructured(f, amount=amount)
-        )
+# for f in PRUNING_FILTERS:
+#     for amount in PRUNING_AMOUNTS:
+#         PRUNING_CONFIGS.append(
+#             l1_unstructured(f, amount=amount)
+#         )
+PRUNING_CONFIGS.append(optimal_config())
 
 
 def main():
@@ -247,6 +273,9 @@ def main():
 
         print(f'\nBenchmarking {name}...')
         pruned_modules = func(p.st_model)
+
+        import gc
+        gc.collect()
 
         result = runner.run_benchmark1(
             p, utt2wav, utt2text, num_utts=args.num_test_utts, calculate_flops=False
