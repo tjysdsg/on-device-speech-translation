@@ -11,7 +11,7 @@ PruneParamsType = List[Tuple[nn.Module, str]]
 
 
 # =============== Module filter functions ===============
-def subsampling(model: ESPnetSTModel) -> PruneParamsType:
+def encoder_subsampling(model: ESPnetSTModel) -> PruneParamsType:
     return [
         (model.encoder.embed.conv[0], 'weight'),
         (model.encoder.embed.conv[2], 'weight'),
@@ -19,7 +19,19 @@ def subsampling(model: ESPnetSTModel) -> PruneParamsType:
     ]
 
 
-def encoder(model: ESPnetSTModel) -> PruneParamsType:
+def encoder_conv(model: ESPnetSTModel) -> PruneParamsType:
+    ret = []
+    for enc in model.encoder.encoders:
+        ret += [
+            (enc.conv_module.pointwise_conv1, 'weight'),
+            (enc.conv_module.pointwise_conv2, 'weight'),
+            (enc.conv_module.depthwise_conv, 'weight'),
+            (enc.conv_module.norm, 'weight'),
+        ]
+    return ret
+
+
+def encoder_attn(model: ESPnetSTModel) -> PruneParamsType:
     ret = []
     for enc in model.encoder.encoders:
         ret += [
@@ -29,46 +41,117 @@ def encoder(model: ESPnetSTModel) -> PruneParamsType:
             (enc.self_attn.linear_v, 'weight'),
             (enc.self_attn.linear_out, 'weight'),
             (enc.self_attn.linear_pos, 'weight'),
+        ]
+    return ret
 
-            # feed forward
+
+def encoder_ff(model: ESPnetSTModel) -> PruneParamsType:
+    ret = []
+    for enc in model.encoder.encoders:
+        ret += [
             (enc.feed_forward.w_1, 'weight'),
             (enc.feed_forward.w_2, 'weight'),
             (enc.feed_forward_macaron.w_1, 'weight'),
             (enc.feed_forward_macaron.w_2, 'weight'),
-
-            # conv
-            (enc.conv_module.pointwise_conv1, 'weight'),
-            (enc.conv_module.pointwise_conv2, 'weight'),
-            (enc.conv_module.depthwise_conv, 'weight'),
         ]
+    return ret
 
-    return ret + subsampling(model)
+
+def encoder_norm(model: ESPnetSTModel) -> PruneParamsType:
+    ret = []
+    for enc in model.encoder.encoders:
+        ret += [
+            (enc.norm_ff, 'weight'),
+            (enc.norm_mha, 'weight'),
+            (enc.norm_ff_macaron, 'weight'),
+            (enc.norm_conv, 'weight'),
+            (enc.norm_final, 'weight'),
+        ]
+    return ret
 
 
-def decoder(model: ESPnetSTModel) -> PruneParamsType:
+def encoder(model: ESPnetSTModel) -> PruneParamsType:
     ret = [
-        (model.decoder.output_layer, 'weight'),
+        # (model.encoder.after_norm, 'weight'),
     ]
+
+    return (
+            ret
+            + encoder_subsampling(model)
+            + encoder_conv(model)
+            + encoder_attn(model)
+            + encoder_ff(model)
+            + encoder_norm(model)
+    )
+
+
+def decoder_embed(model: ESPnetSTModel) -> PruneParamsType:
+    return [(model.decoder.embed[0], 'weight')]
+
+
+def decoder_self_attn(model: ESPnetSTModel) -> PruneParamsType:
+    ret = []
     for dec in model.decoder.decoders:
         ret += [
-            # self attention
             (dec.self_attn.linear_q, 'weight'),
             (dec.self_attn.linear_k, 'weight'),
             (dec.self_attn.linear_v, 'weight'),
             (dec.self_attn.linear_out, 'weight'),
+        ]
 
-            # cross attention
+    return ret
+
+
+def decoder_cross_attn(model: ESPnetSTModel) -> PruneParamsType:
+    ret = []
+    for dec in model.decoder.decoders:
+        ret += [
             (dec.src_attn.linear_q, 'weight'),
             (dec.src_attn.linear_k, 'weight'),
             (dec.src_attn.linear_v, 'weight'),
             (dec.src_attn.linear_out, 'weight'),
+        ]
 
-            # feed forward
+    return ret
+
+
+def decoder_ff(model: ESPnetSTModel) -> PruneParamsType:
+    ret = []
+    for dec in model.decoder.decoders:
+        ret += [
             (dec.feed_forward.w_1, 'weight'),
             (dec.feed_forward.w_2, 'weight'),
         ]
 
     return ret
+
+
+def decoder_norm(model: ESPnetSTModel) -> PruneParamsType:
+    ret = []
+    for dec in model.decoder.decoders:
+        ret += [
+            (dec.norm1, 'weight'),
+            (dec.norm2, 'weight'),
+            (dec.norm3, 'weight'),
+        ]
+
+    return ret
+
+
+def decoder(model: ESPnetSTModel) -> PruneParamsType:
+    ret = [
+        # (model.decoder.after_norm, 'weight'),
+        # (model.decoder.output_layer, 'weight'),
+    ]
+
+    return (
+            ret
+            + decoder_embed(model)
+            + decoder_self_attn(model)
+            + decoder_cross_attn(model)
+        # + decoder_ff(model)
+        # + decoder_norm(model)
+    )
 
 
 def all_params(model: ESPnetSTModel) -> PruneParamsType:
@@ -101,20 +184,36 @@ def l1_unstructured(
     return f'l1_u_{param_filter.__name__}_{amount}', func
 
 
-PRUNING_METHODS = [
-    # l1_unstructured(encoder, amount=0.33),
-    # l1_unstructured(encoder, amount=0.5),
-    # l1_unstructured(encoder, amount=0.7),
-    # l1_unstructured(encoder, amount=0.9),
-    l1_unstructured(decoder, amount=0.33),
-    l1_unstructured(decoder, amount=0.5),
-    l1_unstructured(decoder, amount=0.7),
-    l1_unstructured(decoder, amount=0.9),
-    l1_unstructured(all_params, amount=0.33),
-    l1_unstructured(all_params, amount=0.5),
-    l1_unstructured(all_params, amount=0.7),
-    l1_unstructured(all_params, amount=0.9),
+PRUNING_AMOUNTS = [
+    0.33,
+    0.5,
+    0.7,
+    0.9,
 ]
+PRUNING_FILTERS = [
+    # Encoder
+    encoder_subsampling,
+    encoder_conv,
+    encoder_attn,
+    encoder_ff,
+    encoder_norm,
+    encoder,
+
+    # Decoder
+    decoder_embed,
+    decoder_self_attn,
+    decoder_cross_attn,
+    decoder_ff,
+    decoder_norm,
+    decoder,
+]
+
+PRUNING_CONFIGS = []
+for f in PRUNING_FILTERS:
+    for amount in PRUNING_AMOUNTS:
+        PRUNING_CONFIGS.append(
+            l1_unstructured(f, amount=amount)
+        )
 
 
 def main():
@@ -142,7 +241,7 @@ def main():
     orig_size = model_size_in_bytes(orig_p.st_model)
 
     # Pruning and run benchmarks
-    for name, func in PRUNING_METHODS:
+    for name, func in PRUNING_CONFIGS:
         # Create a new copy each time
         p = runner.create_inference_pipeline(pretrained_model, pretrained_config, quantized=False)
 
