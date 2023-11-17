@@ -102,10 +102,10 @@ def l1_unstructured(
 
 
 PRUNING_METHODS = [
-    l1_unstructured(encoder, amount=0.33),
-    l1_unstructured(encoder, amount=0.5),
-    l1_unstructured(encoder, amount=0.7),
-    l1_unstructured(encoder, amount=0.9),
+    # l1_unstructured(encoder, amount=0.33),
+    # l1_unstructured(encoder, amount=0.5),
+    # l1_unstructured(encoder, amount=0.7),
+    # l1_unstructured(encoder, amount=0.9),
     l1_unstructured(decoder, amount=0.33),
     l1_unstructured(decoder, amount=0.5),
     l1_unstructured(decoder, amount=0.7),
