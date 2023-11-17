@@ -1,6 +1,7 @@
 # Copied from ESPnet (espnet2/bin/st_inference.py) to support quantization
 
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Any, List, Optional, Sequence, Tuple, Union, Literal
@@ -10,6 +11,7 @@ import torch
 from torch import nn
 from typeguard import check_argument_types, check_return_type
 
+from espnet2.st.espnet_model import ESPnetSTModel
 from espnet2.asr.transducer.beam_search_transducer import BeamSearchTransducer
 from espnet2.asr.transducer.beam_search_transducer import Hypothesis as TransHypothesis
 from espnet2.tasks.enh_s2t import EnhS2TTask
@@ -664,6 +666,57 @@ class Speech2Text(nn.Module):
             kwargs.update(**d.download_and_unpack(model_tag))
 
         return Speech2Text(**kwargs)
+
+    def export_encoder(self, speech: torch.Tensor, out_dir: str):
+        self.eval()
+        export_options = torch.onnx.ExportOptions(dynamic_shapes=True)
+
+        # Input as audio signal
+        if isinstance(speech, np.ndarray):
+            speech = torch.tensor(speech)
+
+        # data: (Nsamples,) -> (1, Nsamples)
+        speech = speech.unsqueeze(0).to(getattr(torch, self.dtype))
+        # lengths: (1,)
+        lengths = speech.new_full([1], dtype=torch.long, fill_value=speech.size(1))
+        batch = {"speech": speech, "speech_lengths": lengths}
+
+        # a. To device
+        batch = to_device(batch, device=self.device)
+        speech = batch["speech"]
+        speech_lengths = batch["speech_lengths"]
+
+        # b. Forward Encoder
+        model: ESPnetSTModel = self.st_model
+
+        # From self.st_model.encode(**batch, return_int_enc=True):
+        feats, feats_lengths = model._extract_feats(speech, speech_lengths)
+        if model.normalize is not None:
+            feats, feats_lengths = model.normalize(feats, feats_lengths)
+
+        out_path = os.path.join(out_dir, 'encoder.onnx')
+        torch.onnx.export(
+            model.encoder,
+            (feats, feats_lengths),
+            out_path,
+            input_names=['feats', 'feats_lens'],
+            output_names=[xs_pad, olens, None],  # the model's output names
+            dynamic_axes={'input': {0: 'batch_size'},  # variable length axes
+                          'output': {0: 'batch_size'}}
+        )
+
+        # Get encoder output so that it can be used for exporting decoder ONNX
+        encoder_out, encoder_out_lens, _ = self.encoder(feats, feats_lengths)
+        assert encoder_out.size(0) == speech.size(0), (
+            encoder_out.size(),
+            speech.size(0),
+        )
+        assert encoder_out.size(1) <= encoder_out_lens.max(), (
+            encoder_out.size(),
+            encoder_out_lens.max(),
+        )
+
+        return encoder_onnx, encoder_out
 
 
 class FxPTQFactory:
