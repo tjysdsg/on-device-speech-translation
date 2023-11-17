@@ -234,11 +234,11 @@ PRUNING_FILTERS = [
 ]
 
 PRUNING_CONFIGS = []
-# for f in PRUNING_FILTERS:
-#     for amount in PRUNING_AMOUNTS:
-#         PRUNING_CONFIGS.append(
-#             l1_unstructured(f, amount=amount)
-#         )
+for f in PRUNING_FILTERS:
+    for amount in PRUNING_AMOUNTS:
+        PRUNING_CONFIGS.append(
+            l1_unstructured(f, amount=amount)
+        )
 PRUNING_CONFIGS.append(optimal_config())
 
 
