@@ -153,6 +153,13 @@ def decoder_all(model: ESPnetSTModel) -> PruneParamsType:
     )
 
 
+def entire(model: ESPnetSTModel) -> PruneParamsType:
+    return (
+            encoder_all(model)
+            + decoder_all(model)
+    )
+
+
 # =======================================================
 
 
@@ -231,6 +238,8 @@ PRUNING_FILTERS = [
     decoder_cross_attn,
     decoder_ff,
     decoder_norm,
+
+    entire,
 ]
 
 PRUNING_CONFIGS = []
