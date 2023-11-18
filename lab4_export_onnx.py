@@ -1,7 +1,5 @@
 import os
-import shutil
-
-from lab2 import LabExpRunner, read_data
+from lab2 import LabExpRunner
 from pathlib import Path
 from lab4 import optimal_config
 from onnx_utils.export_st import STModelExport
@@ -24,13 +22,11 @@ def main():
     p = runner.create_inference_pipeline(pretrained_model, pretrained_config, quantized=False)
 
     _, func = optimal_config()
-    pruned_modules = func(p.st_model)
+    func(p.st_model)
 
-    res_dir = Path.home() / ".cache" / "espnet_onnx"
     m = STModelExport(
         # cache_dir=out_dir,  # FIXME: https://github.com/espnet/espnet_onnx/issues/101
     )
-
     m.export(
         p,
         tag_name='pruned_onnx',
@@ -38,8 +34,8 @@ def main():
         optimize=False,
     )
 
-    # FIXME
-    shutil.copytree(res_dir / 'pruned_onnx', Path(out_dir) / 'pruned_onnx')
+    # res_dir = Path.home() / ".cache" / "espnet_onnx"
+    # shutil.copytree(res_dir / 'pruned_onnx', Path(out_dir) / 'pruned_onnx')
 
 
 def get_args():

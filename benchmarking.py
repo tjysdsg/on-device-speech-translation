@@ -29,6 +29,7 @@ def test_st_model(
     refs = []
     total_time = 0
     for i, (utt, speech) in enumerate(test_data):
+        print(utt, len(preds))
         # ====================
         start = time.perf_counter()
 
