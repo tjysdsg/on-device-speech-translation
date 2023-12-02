@@ -22,3 +22,25 @@
 - https://github.com/mjpost/sacrebleu
 - Source code for speech translation inference: https://github.com/espnet/espnet/blob/master/espnet2/bin/st_inference.py
 - Source code for speech translation model: https://github.com/espnet/espnet/blob/master/espnet2/st/espnet_model.py
+
+# Lab3
+
+# Lab4
+
+# Lab5
+
+# Final
+
+Under `pretrained/`:
+
+1. Export ONNX models w/o other techniques
+
+   ```bash
+   python export_onnx.py --pruned --quantized
+   ```
+
+2. Run benchmarks
+
+   ```bash
+   python final_benchmark.py --data_dir ../data --out_dir ../output
+   ```
