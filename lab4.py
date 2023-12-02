@@ -1,6 +1,6 @@
 import os
-from lab2 import LabExpRunner, read_data
-from torch.nn.utils import prune, parameters_to_vector
+from lab2 import LabExpRunner, read_data, PRETRAINED_CONFIG, PRETRAINED_MODEL
+from torch.nn.utils import prune
 import torch.nn as nn
 from typing import List, Tuple, Callable
 from espnet2.st.espnet_model import ESPnetSTModel
@@ -262,14 +262,11 @@ def main():
 
     runner = LabExpRunner()  # <---
 
-    pretrained_model = "exp/st_train_st_conformer_asrinit_v2_raw_en_de_bpe_tc4000_sp/valid.acc.ave_10best.pth"
-    pretrained_config = "exp/st_train_st_conformer_asrinit_v2_raw_en_de_bpe_tc4000_sp/config.yaml"
-
     # Load test data (520 utterances out of MUST_C_v2 TST-COMMON subset)
     utt2wav, utt2text = read_data(args.data_dir)
 
     # Results of the original pretrained model
-    orig_p = runner.create_inference_pipeline(pretrained_model, pretrained_config, quantized=False)
+    orig_p = runner.create_inference_pipeline(PRETRAINED_MODEL, PRETRAINED_CONFIG, quantized=False)
     # runner.run_benchmark(
     #     orig_p, 'original', args.out_dir, utt2wav, utt2text, num_utts=args.num_test_utts, calculate_flops=False
     # )
@@ -278,7 +275,7 @@ def main():
     # Pruning and run benchmarks
     for name, func in PRUNING_CONFIGS:
         # Create a new copy each time
-        p = runner.create_inference_pipeline(pretrained_model, pretrained_config, quantized=False)
+        p = runner.create_inference_pipeline(PRETRAINED_MODEL, PRETRAINED_CONFIG, quantized=False)
 
         print(f'\nBenchmarking {name}...')
         pruned_modules = func(p.st_model)

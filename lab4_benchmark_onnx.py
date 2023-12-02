@@ -34,6 +34,9 @@ def main():
     for tag in ONNX_MODEL_TAGS:
         p = Speech2Text(tag_name=tag)
 
+        import gc
+        gc.collect()
+
         result = test_st_model(p, utt2wav, utt2text, args.num_test_utts)
         LabExpRunner.save_exp_statistics(result, os.path.join(out_dir, f'{tag}.json'))
 

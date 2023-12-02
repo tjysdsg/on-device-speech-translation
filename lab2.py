@@ -9,6 +9,9 @@ from typing import Callable, Literal, Optional, List
 # from espnet2.bin.st_inference import Speech2Text
 from st_inference import Speech2Text
 
+PRETRAINED_MODEL = "exp/st_train_st_conformer_asrinit_v2_raw_en_de_bpe_tc4000_sp/valid.acc.ave_10best.pth"
+PRETRAINED_CONFIG = "exp/st_train_st_conformer_asrinit_v2_raw_en_de_bpe_tc4000_sp/config.yaml"
+
 
 def read_data(data_dir):
     with open(os.path.join(data_dir, 'utt2wav.pkl'), 'rb') as f:
@@ -183,9 +186,7 @@ def main():
     runner = LabExpRunner()
 
     # ==== Load Original Pre-trained Model ====
-    pretrained_model = "exp/st_train_st_conformer_asrinit_v2_raw_en_de_bpe_tc4000_sp/valid.acc.ave_10best.pth"
-    pretrained_config = "exp/st_train_st_conformer_asrinit_v2_raw_en_de_bpe_tc4000_sp/config.yaml"
-    pipeline = runner.create_inference_pipeline(pretrained_model, pretrained_config)
+    pipeline = runner.create_inference_pipeline(PRETRAINED_MODEL, PRETRAINED_CONFIG)
 
     # Load test data (520 utterances out of MUST_C_v2 TST-COMMON subset)
     utt2wav, utt2text = read_data(args.data_dir)
@@ -197,7 +198,7 @@ def main():
 
     # Change model size and run benchmarks
     for m in INPUT_SIZE_MODIFIERS:  # MODEL_CONFIG_MODIFIERS:
-        p = runner.resize_model(pipeline.st_model, pretrained_config, m)
+        p = runner.resize_model(pipeline.st_model, PRETRAINED_CONFIG, m)
         runner.run_benchmark(
             p, m.__name__, args.out_dir, utt2wav, utt2text, num_utts=args.num_test_utts, calculate_flops=False
         )
