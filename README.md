@@ -1,19 +1,73 @@
-# Lab2 Baseline Benchmarking
+CMU 11-767 On-Device Machine Learning. Group Project: Efficient Speech Translation
+---
+[@tjysdsg](https://github.com/tjysdsg)
+[@VincieSlytherin](https://github.com/VincieSlytherin)
+[@kurisujhin](https://github.com/kurisujhin)
+[@SandyLuXY](https://github.com/SandyLuXY)
+
+# Setup
+
+1. Init all git submodules
+2. Enter `pretrained/` and pull git lfs files
+   ```bash
+   git lfs install
+   git lfs pull
+   ```
+3. Install ESPnet: https://espnet.github.io/espnet/installation.html
+4. Prepare data
+   ```bash
+   cd must_c_test_subset
+   python ../prepare_data.py --out_dir ../data --sample_rate 16000
+   ```
+
+# Lab2: Baseline
 
 - Pretrained model that's
   used: https://huggingface.co/espnet/brianyan918_mustc-v2_en-de_st_conformer_asrinit_v2_raw_en_de_bpe_tc4000_sp
 
 ```bash
-./run.sh
+cd pretrained
+python plot_lab2.py --result_dir output --out_dir output/plot_all
 ```
 
-## Notes
+# Lab3: Quantization
 
-- Decreasing model size without re-training causes auto-regressive decoder to output long and repeated garbage,
-  thus leading to higher average latency.
-- There's an update to the python environment between Lab2 and Lab3, and I backed up results of lab2
-  in [output_lab2](output_lab2).
-- `qint8` quantization: 200MB -> 70.5MB
+```bash
+lab3.py
+plot_all.py
+```
+
+# Lab4: Pruning
+
+```bash
+lab4.py
+lab4_export_onnx.py
+lab4_benchmark_onnx.py
+```
+
+# Lab5: Energy
+
+# Final
+
+Under `pretrained/`:
+
+1. Export ONNX models w/o other techniques
+
+   ```bash
+   python export_onnx.py --pruned --quantized  # adjust these flags as needed
+   ```
+
+2. Run benchmarks
+
+   ```bash
+   python final_benchmark.py --data_dir ../data --out_dir ../output
+   ```
+
+# Ablation study
+
+`output_onnx/` is constructed from results of `final_benchmark.py`, containing ablation study of ONNX, pruning, and
+quantization.
+Run `plot_all.py` on this folder to generate the plot.
 
 # See also
 
@@ -23,38 +77,3 @@
 - Source code for speech translation inference: https://github.com/espnet/espnet/blob/master/espnet2/bin/st_inference.py
 - Source code for speech translation model: https://github.com/espnet/espnet/blob/master/espnet2/st/espnet_model.py
 
-# Lab3
-
-```bash
-lab3.py
-plot_all.py
-```
-
-# Lab4
-
-```bash
-lab4.py
-```
-
-# Lab5
-
-# Final
-
-Under `pretrained/`:
-
-1. Export ONNX models w/o other techniques
-
-   ```bash
-   python export_onnx.py --pruned --quantized
-   ```
-
-2. Run benchmarks
-
-   ```bash
-   python final_benchmark.py --data_dir ../data --out_dir ../output
-   ```
-
-## ONNX related plots
-
-`output_onnx/` is constructed from results of `final_benchmark.py`.
-Run `plot_all.py` on this folder to plot ablation study of ONNX, pruning, and quantization.
