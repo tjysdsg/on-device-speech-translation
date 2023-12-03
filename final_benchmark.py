@@ -54,7 +54,8 @@ def main():
 
     # Same but with ONNX
     for tag in ONNX_MODEL_TAGS:
-        p = Speech2Text(tag_name=tag)
+        quantize = 'q1' in tag
+        p = Speech2Text(tag_name=tag, use_quantized=quantize)
 
         import gc
         gc.collect()
