@@ -53,3 +53,8 @@ Under `pretrained/`:
    ```bash
    python final_benchmark.py --data_dir ../data --out_dir ../output
    ```
+
+## ONNX related plots
+
+`output_onnx/` is constructed from results of `final_benchmark.py`.
+Run `plot_all.py` on this folder to plot ablation study of ONNX, pruning, and quantization.
