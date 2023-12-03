@@ -25,7 +25,16 @@
 
 # Lab3
 
+```bash
+lab3.py
+plot_all.py
+```
+
 # Lab4
+
+```bash
+lab4.py
+```
 
 # Lab5
 
