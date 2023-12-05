@@ -7,10 +7,10 @@ from benchmarking import test_st_model
 from lab4_benchmark_onnx import PROBLEM_MATIC_UTTS
 
 ONNX_MODEL_TAGS = [
-    # 'q0_p0',
+    'q0_p0',
     'q1_p0',
-    # 'q0_p1',
-    # 'q1_p1',
+    'q0_p1',
+    'q1_p1',
 ]
 
 
@@ -50,8 +50,8 @@ def main():
         utt2wav.pop(utt)
 
     # Quantization + Pruning
-    # result = prune_quantize_no_onnx(utt2wav, utt2text, args.num_test_utts)
-    # LabExpRunner.save_exp_statistics(result, os.path.join(out_dir, f'q1_p1_no_onnx.json'))
+    result = prune_quantize_no_onnx(utt2wav, utt2text, args.num_test_utts)
+    LabExpRunner.save_exp_statistics(result, os.path.join(out_dir, f'q1_p1_no_onnx.json'))
 
     # Same but with ONNX
     for tag in ONNX_MODEL_TAGS:
