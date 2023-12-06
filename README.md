@@ -47,6 +47,15 @@ lab4_benchmark_onnx.py
 
 # Lab5: Energy
 
+1. Export ONNX models w/o other techniques
+
+   ```bash
+   cd pretrained/
+   python export_onnx.py --pruned --quantized
+   ```
+
+2. Run `run_lab5.sh`. But need to do this first: https://github.com/mlco2/codecarbon/issues/244
+
 # Final
 
 Under `pretrained/`:
@@ -54,13 +63,15 @@ Under `pretrained/`:
 1. Export ONNX models w/o other techniques
 
    ```bash
-   python export_onnx.py --pruned --quantized  # adjust these flags as needed
+   cd pretrained/
+   python ../export_onnx.py --pruned --quantized  # adjust these flags as needed
    ```
 
 2. Run benchmarks
 
    ```bash
-   python final_benchmark.py --data_dir ../data --out_dir ../output
+   cd pretrained/
+   python ../final_benchmark.py --data_dir ../data --out_dir ../output
    ```
 
 # Ablation study
