@@ -4,7 +4,7 @@ set -e
 set -u
 set -o pipefail
 
-epoch=1
+epoch=4
 
 pushd pretrained
 
