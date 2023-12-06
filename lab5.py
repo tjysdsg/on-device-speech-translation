@@ -4,6 +4,7 @@ from onnx_utils.st_model import Speech2Text
 from benchmarking import test_st_model
 from lab4_benchmark_onnx import PROBLEM_MATIC_UTTS
 from codecarbon import EmissionsTracker
+from codecarbon.core import cpu, gpu
 
 
 def model1(utt2wav, utt2text, epoch):
@@ -37,11 +38,10 @@ def main():
     for utt in PROBLEM_MATIC_UTTS:
         utt2wav.pop(utt)
 
-    from codecarbon.core import cpu, gpu
     if not cpu.is_powergadget_available() and not cpu.is_rapl_available():
         raise RuntimeError("Neither PowerGadget nor RAPL is available, cannot get meaning full results.")
 
-    with EmissionsTracker(output_file='emissions.csv', output_dir=out_dir):
+    with EmissionsTracker(output_file=f'{args.tag}.csv', output_dir=out_dir):
         if args.model == 1:
             model1(utt2wav, utt2text, args.epoch)
         elif args.model == 2:
@@ -57,6 +57,7 @@ def get_args():
     parser.add_argument('--data_dir', type=str, required=True)
     parser.add_argument('--epoch', type=int, required=True)
     parser.add_argument('--model', type=int, required=True)
+    parser.add_argument('--tag', type=str, required=True, help='Tag used to name the output file.')
     return parser.parse_args()
 
 
