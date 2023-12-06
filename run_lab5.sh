@@ -5,8 +5,11 @@ set -u
 set -o pipefail
 
 epoch=4
-state=cpu_normal
-# state=cpu_highload
+# state=cpu_normal
+
+state=cpu_highload
+# can use `stress` to create high CPU load
+
 # state=cpu_1thread
 
 pushd pretrained
