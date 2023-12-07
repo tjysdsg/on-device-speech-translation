@@ -8,7 +8,11 @@ from codecarbon import EmissionsTracker
 from codecarbon.core import cpu, gpu
 
 
-def model1(utt2wav, utt2text, epoch: int, cuda: bool):
+def model1(utt2wav, utt2text, epoch: int, num_cpu_threads: int, cuda: bool):
+    if num_cpu_threads > 0:
+        torch.set_num_threads(num_cpu_threads)
+        print(f'torch num_threads set to: {num_cpu_threads}')
+
     device = 'cpu'
     if cuda:
         if not torch.cuda.is_available():
@@ -24,8 +28,17 @@ def model1(utt2wav, utt2text, epoch: int, cuda: bool):
         )
 
 
-def model2(utt2wav, utt2text, epoch: int, cuda: bool):
-    p = Speech2Text(tag_name='q1_p1', use_quantized=True)
+def model2(utt2wav, utt2text, epoch: int, num_cpu_threads: int, cuda: bool):
+    # TODO: cuda
+
+    p = Speech2Text(
+        tag_name='q1_p1',
+        use_quantized=True,
+        session_option_dict=dict(
+            intra_op_num_threads=num_cpu_threads,
+            inter_op_num_threads=num_cpu_threads,
+        ),
+    )
 
     for i in range(epoch):
         test_st_model(p, utt2wav, utt2text, 100)
@@ -40,13 +53,13 @@ def main():
     out_dir = args.out_dir
     os.makedirs(out_dir, exist_ok=True)
 
-    # num of CPU threads
-    if args.num_threads > 0:
+    num_cpu_threads = args.num_threads
+    if num_cpu_threads > 0:
         if args.gpu:
             print('Ignoring --num_threads since GPU is being used')
-        else:
-            torch.set_num_threads(args.num_threads)
-            print(f'torch num threads set to: {args.num_threads}')
+            num_cpu_threads = 0
+    else:
+        num_cpu_threads = 0
 
     if args.gpu and not torch.cuda.is_available():
         raise RuntimeError('Requested GPU inference but CUDA is not available.')
@@ -69,9 +82,9 @@ def main():
     # Run one of the models and track energy
     with EmissionsTracker(output_file=f'{args.tag}.csv', output_dir=out_dir):
         if args.model == 1:
-            model1(utt2wav, utt2text, args.epoch, args.gpu)
+            model1(utt2wav, utt2text, args.epoch, num_cpu_threads=num_cpu_threads, cuda=args.gpu)
         elif args.model == 2:
-            model2(utt2wav, utt2text, args.epoch, args.gpu)
+            model2(utt2wav, utt2text, args.epoch, num_cpu_threads=num_cpu_threads, cuda=args.gpu)
         else:
             raise ValueError("Invalid model number")
 

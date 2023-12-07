@@ -1,5 +1,7 @@
+import logging
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
+import onnxruntime as ort
 
 import numpy as np
 from typeguard import check_argument_types
@@ -15,6 +17,7 @@ class Speech2Text(AbsSTModel):
             model_dir: Union[Path, str] = None,
             providers: List[str] = ["CPUExecutionProvider"],
             use_quantized: bool = False,
+            session_option_dict: Optional[dict] = None
     ):
         assert check_argument_types()
         self._check_argument(tag_name, model_dir)
@@ -35,6 +38,14 @@ class Speech2Text(AbsSTModel):
 
         self.start_idx = 1
         self.last_idx = -1
+
+        # Setting onnxruntime inference session options
+        encoder_opt = self.encoder.encoder.get_session_options()
+        decoder_opt = self.decoder.decoder.get_session_options()
+        for k, v in session_option_dict.items():
+            print(f'Setting onnx inference session option `{k}` to `{v}`')
+            setattr(encoder_opt, k, v)
+            setattr(decoder_opt, k, v)
 
     def __call__(
             self, speech: np.ndarray

@@ -44,8 +44,8 @@ class AbsSTModel(AbsModel):
 
     def _build_model(self, providers, use_quantized):
         self.encoder = get_encoder(self.config.encoder, providers, use_quantized)
-        decoder = get_decoder(self.config.decoder, providers, use_quantized)
-        scorers = {"decoder": decoder}
+        self.decoder = get_decoder(self.config.decoder, providers, use_quantized)
+        scorers = {"decoder": self.decoder}
         weights = {}
 
         scorers.update(
