@@ -29,11 +29,14 @@ def model1(utt2wav, utt2text, epoch: int, num_cpu_threads: int, cuda: bool):
 
 
 def model2(utt2wav, utt2text, epoch: int, num_cpu_threads: int, cuda: bool):
-    # TODO: cuda
+    execution_provider = 'CPUExecutionProvider'
+    if cuda:
+        execution_provider = 'CUDAExecutionProvider'
 
     p = Speech2Text(
         tag_name='q1_p1',
         use_quantized=True,
+        providers=[execution_provider],
         session_option_dict=dict(
             intra_op_num_threads=num_cpu_threads,
             inter_op_num_threads=num_cpu_threads,
