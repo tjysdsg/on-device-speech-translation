@@ -1,4 +1,5 @@
 import os
+import torch
 from lab2 import LabExpRunner, read_data, PRETRAINED_MODEL, PRETRAINED_CONFIG
 from onnx_utils.st_model import Speech2Text
 from benchmarking import test_st_model
@@ -25,6 +26,8 @@ def model2(utt2wav, utt2text, epoch):
 
 
 def main():
+    torch.set_num_threads(1)
+
     # Must be running in the directory that contains 'exp' and 'data' directories
     if not os.path.isdir('exp') or not os.path.isdir('data'):
         raise RuntimeError("Please run this script in `pretrained` directory")
@@ -58,6 +61,8 @@ def get_args():
     parser.add_argument('--epoch', type=int, required=True)
     parser.add_argument('--model', type=int, required=True)
     parser.add_argument('--tag', type=str, required=True, help='Tag used to name the output file.')
+    parser.add_argument('--num_threads', type=int, default=-1,
+                        help='Use this to limit the number of threads used for computation.')
     return parser.parse_args()
 
 
