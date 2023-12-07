@@ -10,7 +10,7 @@ num_threads=-1
 state=cpu_normal
 
 # state=cpu_highload
-# can use `stress` to create high CPU load
+# can use `stress -c 8` to create high CPU load
 
 # state=cpu_1thread
 # num_threads=1

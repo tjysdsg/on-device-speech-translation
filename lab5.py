@@ -42,7 +42,10 @@ def main():
         utt2wav.pop(utt)
 
     if not cpu.is_powergadget_available() and not cpu.is_rapl_available():
-        raise RuntimeError("Neither PowerGadget nor RAPL is available, cannot get meaning full results.")
+        raise RuntimeError(
+            "Neither PowerGadget nor RAPL is available, cannot get meaning full results.\n"
+            "Might need to run this if on linux: `sudo chmod -R a+r /sys/class/powercap/intel-rapl`"
+        )
 
     with EmissionsTracker(output_file=f'{args.tag}.csv', output_dir=out_dir):
         if args.model == 1:
