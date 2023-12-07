@@ -8,8 +8,14 @@ from codecarbon import EmissionsTracker
 from codecarbon.core import cpu, gpu
 
 
-def model1(utt2wav, utt2text, epoch):
-    runner = LabExpRunner()
+def model1(utt2wav, utt2text, epoch: int, cuda: bool):
+    device = 'cpu'
+    if cuda:
+        if not torch.cuda.is_available():
+            raise RuntimeError('CUDA is not available.')
+        device = "cuda"
+
+    runner = LabExpRunner(device=device)
     pipeline = runner.create_inference_pipeline(PRETRAINED_MODEL, PRETRAINED_CONFIG)
 
     for i in range(epoch):
@@ -18,7 +24,7 @@ def model1(utt2wav, utt2text, epoch):
         )
 
 
-def model2(utt2wav, utt2text, epoch):
+def model2(utt2wav, utt2text, epoch: int, cuda: bool):
     p = Speech2Text(tag_name='q1_p1', use_quantized=True)
 
     for i in range(epoch):
@@ -26,8 +32,6 @@ def model2(utt2wav, utt2text, epoch):
 
 
 def main():
-    torch.set_num_threads(1)
-
     # Must be running in the directory that contains 'exp' and 'data' directories
     if not os.path.isdir('exp') or not os.path.isdir('data'):
         raise RuntimeError("Please run this script in `pretrained` directory")
@@ -36,22 +40,38 @@ def main():
     out_dir = args.out_dir
     os.makedirs(out_dir, exist_ok=True)
 
+    # num of CPU threads
+    if args.num_threads > 0:
+        if args.gpu:
+            print('Ignoring --num_threads since GPU is being used')
+        else:
+            torch.set_num_threads(args.num_threads)
+            print(f'torch num threads set to: {args.num_threads}')
+
+    if args.gpu and not torch.cuda.is_available():
+        raise RuntimeError('Requested GPU inference but CUDA is not available.')
+
     # Load test data (520 utterances out of MUST_C_v2 TST-COMMON subset)
     utt2wav, utt2text = read_data(args.data_dir)
     for utt in PROBLEM_MATIC_UTTS:
         utt2wav.pop(utt)
 
-    if not cpu.is_powergadget_available() and not cpu.is_rapl_available():
+    # Check if we have the tools to get meaningful power consumption readings
+    if args.gpu:
+        if not gpu.is_gpu_details_available():
+            raise RuntimeError("GPU details are not available")
+    elif not cpu.is_powergadget_available() and not cpu.is_rapl_available():
         raise RuntimeError(
             "Neither PowerGadget nor RAPL is available, cannot get meaning full results.\n"
             "Might need to run this if on linux: `sudo chmod -R a+r /sys/class/powercap/intel-rapl`"
         )
 
+    # Run one of the models and track energy
     with EmissionsTracker(output_file=f'{args.tag}.csv', output_dir=out_dir):
         if args.model == 1:
-            model1(utt2wav, utt2text, args.epoch)
+            model1(utt2wav, utt2text, args.epoch, args.gpu)
         elif args.model == 2:
-            model2(utt2wav, utt2text, args.epoch)
+            model2(utt2wav, utt2text, args.epoch, args.gpu)
         else:
             raise ValueError("Invalid model number")
 
@@ -64,6 +84,7 @@ def get_args():
     parser.add_argument('--epoch', type=int, required=True)
     parser.add_argument('--model', type=int, required=True)
     parser.add_argument('--tag', type=str, required=True, help='Tag used to name the output file.')
+    parser.add_argument('--gpu', action='store_true')
     parser.add_argument('--num_threads', type=int, default=-1,
                         help='Use this to limit the number of threads used for computation.')
     return parser.parse_args()
