@@ -54,7 +54,7 @@ lab4_benchmark_onnx.py
    python export_onnx.py --pruned --quantized
    ```
 
-2. Run `run_lab5.sh`. But need to do this first: https://github.com/mlco2/codecarbon/issues/244
+2. Run `run_lab5.sh` and `run_lab5_gpu.sh`. Check comments carefully before running.
 
 # Final
 

@@ -8,7 +8,10 @@ epoch=4
 
 state=gpu_normal
 
-state=gpu_underclock
+# state=gpu_highload
+# Run `glmark2 -b 'shadow:duration=100000'`
+
+# state=gpu_underclock
 # Use this: sudo nvidia-smi --lock-gpu-clocks=1000
 # And this to reset: sudo nvidia-smi --reset-gpu-clocks
 
