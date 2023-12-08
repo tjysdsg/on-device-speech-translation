@@ -8,6 +8,11 @@ epoch=4
 
 state=gpu_normal
 
+state=gpu_underclock
+# Use this: sudo nvidia-smi --lock-gpu-clocks=1000
+# And this to reset: sudo nvidia-smi --reset-gpu-clocks
+
+
 pushd pretrained
 
 python ../lab5.py \
