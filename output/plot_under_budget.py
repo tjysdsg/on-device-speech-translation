@@ -10,16 +10,16 @@ import seaborn as sns
 sns.set_theme()  # sns.set_style('whitegrid')
 
 n_iters_10Wh = {
-    "model1_gpu": 1967,
-    "model1_cpu": 1787,
-    "model2_gpu": 2570,
-    "model2_cpu": 4057
+    "original_gpu": 1967,
+    "original_cpu": 1787,
+    "final_gpu": 2570,
+    "final_cpu": 4057
 }
 BLEU = {
-    "model1_gpu": 56.6,
-    "model1_cpu": 56.6,
-    "model2_gpu": 42.7,
-    "model2_cpu": 42.7
+    "original_gpu": 56.6,
+    "original_cpu": 56.6,
+    "final_gpu": 42.7,
+    "final_cpu": 42.7
 }
 
 
